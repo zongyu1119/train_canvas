@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>第二章 第三节</title>
+    <style>
+        body {
+            background-color: #bbb;
+        }
+
+        #canvas {
+            background-color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="1100" height="600">
+        <p>浏览器不支持canvas</p>
+    </canvas>
+    <script>
+        window.onload = function () {
+
+            //  car1.load();
+            var i = 10;
+            // draw();
+           
+          
+       
+draw();
+        };
+        window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame ||
+            window.oRequestAnimationFrame ||
+            window.msRequestAnimationFrame ||
+            function (callback) {
+                return window.setTimeout(callback, 1000 / 60);
+            });
+      
+            var canvas = document.getElementById("canvas");
+            var line1 = new line([{ x: 50, y: 120 }, { x: 200, y: 50 }, { x: 850, y: 50 }, { x: 1000, y: 100 }], canvas, 3);
+           
+            var car2 = new car(50, "206623", "YW25Z", canvas);
+        car2.x_bot = 200;
+        car2.y_bot = 50;
+        function draw() {
+            window.requestAnimationFrame(draw, canvas);
+            if (car2.y_bot < 550) {
+              //  car2.y_bot++;
+                car2.x_bot++;
+                car2.clear();
+                car2.load();
+                line1.load();
+            }
+        }
+        /*
+        *标识一个点
+        */
+        function dot(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+        /*
+        *铁路线
+        *DOTS：是对象{x:0,y:0}的list
+        *canvas_elment：是画布对象
+        *line_width:是线宽
+        */
+        function line(Dots = {}, canvas_elment, line_width = 3) {
+            this.Dots = Dots;
+            this.line_width = line_width;
+            this.canvas = canvas_elment;
+            this.ctx = canvas_elment.getContext("2d");
+            this.clear = function () {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); //清空所有的内容
+            };
+            var line = function (bx, by, ex, ey, ctx) {
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(ex, ey);       //设置末端状态               
+                ctx.closePath();
+                return ctx;
+            }
+            this.load = function () {
+                this.ctx.lineWidth = this.line_width;
+                // Math.sqrt(81);
+                //    console.log("dots_length:"+Dots.length);
+                if (Dots != null && Dots.length >= 2) {
+                    for (var i = 0; i < Dots.length; i++) {
+                        if (i <= Dots.length - 2) {
+                            var line_length = Math.sqrt(Math.pow(this.Dots[i + 1].x - this.Dots[i].x, 2) + Math.pow(this.Dots[i + 1].y - this.Dots[i].y, 2));
+                            //   console.log("line_length:" + line_length);
+                            if (line_length > this.line_width * 5) {
+                                var line_count = Math.ceil(line_length / (line_width * 5));
+                                //  console.log("line_count:"+line_count);
+                                for (var j = 0; j < line_count; j++) {
+                                    var begin_dot = new dot(0, 0);
+                                    var a_dotx_length = (this.Dots[i + 1].x - this.Dots[i].x) / line_count;
+                                    var a_doty_length = (this.Dots[i + 1].y - this.Dots[i].y) / line_count;
+                                    begin_dot.y = (a_doty_length * j) + this.Dots[i].y;
+                                    begin_dot.x = (a_dotx_length * j) + this.Dots[i].x;
+                                    var end_dot = new dot(0, 0);
+                                    if (j == (line_count - 1)) {
+                                        end_dot.y = this.Dots[i + 1].y;
+                                        end_dot.x = this.Dots[i + 1].x;
+                                    } else {
+                                        end_dot.y = (a_doty_length * (j + 1)) + this.Dots[i].y;
+                                        end_dot.x = (a_dotx_length * (j + 1)) + this.Dots[i].x;
+                                    }
+                                    if (j % 2 == 0)
+                                        this.ctx.strokeStyle = "black";
+                                    else
+                                        this.ctx.strokeStyle = "DarkGray";
+                                    //   console.log("bx:" + begin_dot.x + " by:" + begin_dot.y + " ex:" + end_dot.x + " ey:" + end_dot.y);
+                                    line(begin_dot.x, begin_dot.y, end_dot.x, end_dot.y, this.ctx).stroke();
+                                }
+                            } else {
+                                this.ctx.strokeStyle = "black";
+                                line(this.Dots[i].x, this.Dots[i].y, this.Dots[i + 1].x, this.Dots[i + 1].y, this.ctx).stroke();
+                            }
+
+                        }
+                    }
+
+                }
+
+            };
+        }
+
+        /*
+        *
+        *一个小车对象
+        */
+        function car(size, loco_id, loco_type, canvas_elment) {
+            this.width = size;
+            this.height = size * 0.6;
+            this.text = loco_id;
+            this.type = loco_type;
+            this.x_bot;
+            this.y_bot;
+            this.x;
+            this.y;
+            this.canvas = canvas_elment;
+            this.ctx = this.canvas.getContext("2d");
+            this.clear = function () {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); //清空所有的内容
+            };
+            var roundRect = function (x, y, w, h, r, ctx) {
+                if (w < 2 * r) { r = w / 2; }
+                if (h < 2 * r) { r = h / 2; }
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.arcTo(x + w, y, x + w, y + h, r);
+                ctx.arcTo(x + w, y + h, x, y + h, r);
+                ctx.arcTo(x, y + h, x, y, r);
+                ctx.arcTo(x, y, x + w, y, r);
+                ctx.closePath();
+                return ctx;
+            }
+            this.load = function () {
+                this.x = this.x_bot;
+                this.y = this.y_bot - this.height - this.height / 3 - 3;
+
+                if (this.x + this.width > this.canvas.width) {
+                    this.x = this.canvas.width - this.width;
+                }
+                if (this.y + this.height > this.canvas.height) {
+                    this.y = this.canvas.height - this.height;
+                }
+                // 创建渐变
+                var grd = this.ctx.createRadialGradient(this.x + (this.width / 2), this.y + (this.height / 2), this.height / 3, this.x + (this.width / 2), this.y + (this.height / 2), this.width);
+                grd.addColorStop(0, "DarkGray");
+                grd.addColorStop(1, "Azure");
+
+                // 填充渐变
+                this.ctx.fillStyle = grd;
+                this.ctx.fillRect(this.x, this.y, this.width, this.height);
+                this.ctx.strokeStyle = "DarkGray";
+                this.ctx.lineWidth = this.height / 12;
+                roundRect(this.x, this.y, this.width, this.height, this.height / 10, this.ctx).stroke();
+                roundRect(this.x + this.width / 6, this.y + this.height + this.height / 24, this.height / 3, this.height / 3, this.height / 3, this.ctx).stroke();
+                roundRect(this.x + (this.width / 6) * 4, this.y + this.height + this.height / 24, this.height / 3, this.height / 3, this.height / 3, this.ctx).stroke();
+                this.ctx.fillStyle = "White";
+                this.ctx.textAlign = "center";
+                this.ctx.font = this.height / 3 + "px Arial";
+                this.ctx.fillText(this.text, this.x + this.width / 2, this.y + this.height / 1.3);
+                this.ctx.fillStyle = "Wheat";
+                this.ctx.font = this.height / 3 + "px Arial";
+                this.ctx.fillText(this.type, this.x + this.width / 2, this.y + this.height / 2.3);
+            };
+        };
+        //绘制圆角矩形
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (w < 2 * r) { r = w / 2; }
+            if (h < 2 * r) { r = h / 2; }
+            this.beginPath();
+            this.moveTo(x + r, y);
+            this.arcTo(x + w, y, x + w, y + h, r);
+            this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r);
+            this.arcTo(x, y, x + w, y, r);
+            this.closePath();
+            return this;
+        };
+    </script>
+</body>
+
+</html>
