@@ -19,40 +19,44 @@
     <canvas id="canvas" width="1100" height="600">
         <p>浏览器不支持canvas</p>
     </canvas>
+  
     <script>
         window.onload = function () {
-
             //  car1.load();
             var i = 10;
-            // draw();
-           
-          
-       
-draw();
+            // draw(); 
+            draw();
         };
-        window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
-            window.mozRequestAnimationFrame ||
-            window.oRequestAnimationFrame ||
-            window.msRequestAnimationFrame ||
-            function (callback) {
-                return window.setTimeout(callback, 1000 / 60);
-            });
-      
-            var canvas = document.getElementById("canvas");
-            var line1 = new line([{ x: 50, y: 120 }, { x: 200, y: 50 }, { x: 850, y: 50 }, { x: 1000, y: 100 }], canvas, 3);
-           
-            var car2 = new car(50, "206623", "YW25Z", canvas);
+  
+
+        var canvas = document.getElementById("canvas");
+        var line1_Dots=[
+            new dot(50,120),
+            new dot(200,50),
+            new dot(850,50),
+            new dot(1000,100)
+        ];
+        var line1_begin_dot=new dot(200,50);
+        var line1_end_dot=new dot(850,50);
+        var line1 = new line(line1_Dots, canvas, line1_begin_dot,line1_end_dot,3);
+
+        var car2 = new car(50, "206623", "YW25Z", canvas,line1,9);
         car2.x_bot = 200;
         car2.y_bot = 50;
+        car2.state="move";
+        car2.index=0;
+        console.log(car2.index);
         function draw() {
             window.requestAnimationFrame(draw, canvas);
-            if (car2.y_bot < 550) {
-              //  car2.y_bot++;
-                car2.x_bot++;
-                car2.clear();
+            if (car2.x_bot<car2.line.end_dot.x-car2.width-car2.width/3) {
+                car2.x_bot++;               
+            }else{
+                car2.x_bot=car2.line.begin_dot.x;
+            }
+
+            car2.clear();
                 car2.load();
                 line1.load();
-            }
         }
         /*
         *标识一个点
@@ -67,8 +71,10 @@ draw();
         *canvas_elment：是画布对象
         *line_width:是线宽
         */
-        function line(Dots = {}, canvas_elment, line_width = 3) {
+        function line(Dots = {}, canvas_elment,begin_dot={},end_dot={}, line_width = 3) {
             this.Dots = Dots;
+            this.begin_dot=begin_dot;//存车起始点
+            this.end_dot=end_dot;//存车结束点
             this.line_width = line_width;
             this.canvas = canvas_elment;
             this.ctx = canvas_elment.getContext("2d");
@@ -131,16 +137,23 @@ draw();
         /*
         *
         *一个小车对象
+        *size:小车宽度
+        *locoid:小车车号
+        *loco_type:小车车型
+        *canvas_elment:绘图对象
         */
-        function car(size, loco_id, loco_type, canvas_elment) {
+        function car(size, loco_id, loco_type, canvas_elment,line=null,index=0) {
             this.width = size;
             this.height = size * 0.6;
             this.text = loco_id;
             this.type = loco_type;
             this.x_bot;
             this.y_bot;
+            this.state="normal";//状态为:normal/selected/move/update
             this.x;
             this.y;
+            this.line=line;
+            this.index=index;
             this.canvas = canvas_elment;
             this.ctx = this.canvas.getContext("2d");
             this.clear = function () {
@@ -159,9 +172,24 @@ draw();
                 return ctx;
             }
             this.load = function () {
+                if(this.line!=null){
+                    if (this.state != "move") {
+                        this.x_bot = this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1);
+                    }
+                    if(this.x_bot>(this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1))){
+                        this.x_bot=this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1);
+                    }
+                    if(this.x_bot<this.line.begin_dot.x){
+                        this.x_bot=this.line.begin_dot.x;
+                    }
+                    this.y_bot=this.line.end_dot.y;
+                }else {
+                    this.x_bot=0;
+                    this.y_bot=0;
+                }
                 this.x = this.x_bot;
                 this.y = this.y_bot - this.height - this.height / 3 - 3;
-
+                
                 if (this.x + this.width > this.canvas.width) {
                     this.x = this.canvas.width - this.width;
                 }
@@ -170,15 +198,34 @@ draw();
                 }
                 // 创建渐变
                 var grd = this.ctx.createRadialGradient(this.x + (this.width / 2), this.y + (this.height / 2), this.height / 3, this.x + (this.width / 2), this.y + (this.height / 2), this.width);
-                grd.addColorStop(0, "DarkGray");
-                grd.addColorStop(1, "Azure");
+                switch(this.state){
+                    case "normal":{
+                        grd.addColorStop(0, "DarkGray");
+                        grd.addColorStop(1, "Azure");
+                    }break;
+                    case "selected":{
+                        grd.addColorStop(0, "red");
+                        grd.addColorStop(1, "Azure");
+                    }break;
+                    case "move":{
+                        grd.addColorStop(0, "aqua");
+                        grd.addColorStop(1, "Azure");
+                    }break;
+                    case "update":{
+                        grd.addColorStop(0, "red");
+                        grd.addColorStop(1, "Azure");
+                    }break;
+                }
+               
 
                 // 填充渐变
                 this.ctx.fillStyle = grd;
                 this.ctx.fillRect(this.x, this.y, this.width, this.height);
                 this.ctx.strokeStyle = "DarkGray";
                 this.ctx.lineWidth = this.height / 12;
+                //轮廓
                 roundRect(this.x, this.y, this.width, this.height, this.height / 10, this.ctx).stroke();
+                //轮子
                 roundRect(this.x + this.width / 6, this.y + this.height + this.height / 24, this.height / 3, this.height / 3, this.height / 3, this.ctx).stroke();
                 roundRect(this.x + (this.width / 6) * 4, this.y + this.height + this.height / 24, this.height / 3, this.height / 3, this.height / 3, this.ctx).stroke();
                 this.ctx.fillStyle = "White";
@@ -190,19 +237,7 @@ draw();
                 this.ctx.fillText(this.type, this.x + this.width / 2, this.y + this.height / 2.3);
             };
         };
-        //绘制圆角矩形
-        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-            if (w < 2 * r) { r = w / 2; }
-            if (h < 2 * r) { r = h / 2; }
-            this.beginPath();
-            this.moveTo(x + r, y);
-            this.arcTo(x + w, y, x + w, y + h, r);
-            this.arcTo(x + w, y + h, x, y + h, r);
-            this.arcTo(x, y + h, x, y, r);
-            this.arcTo(x, y, x + w, y, r);
-            this.closePath();
-            return this;
-        };
+ 
     </script>
 </body>
 
