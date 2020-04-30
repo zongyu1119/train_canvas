@@ -19,7 +19,7 @@
     <canvas id="canvas" width="1100" height="600">
         <p>浏览器不支持canvas</p>
     </canvas>
-  
+
     <script>
         window.onload = function () {
             //  car1.load();
@@ -27,37 +27,45 @@
             // draw(); 
             draw();
         };
-  
-
         var canvas = document.getElementById("canvas");
-        var line1_Dots=[
-            new dot(50,120),
-            new dot(200,50),
-            new dot(850,50),
-            new dot(1000,100)
-        ];
-        var line1_begin_dot=new dot(200,50);
-        var line1_end_dot=new dot(850,50);
-        var line1 = new line(line1_Dots, canvas, line1_begin_dot,line1_end_dot,3);
+            var line1_Dots = [
+                new dot(50, 120),
+                new dot(200, 50),
+                new dot(850, 50),
+                new dot(1000, 100)
+            ];
+            var line1_begin_dot = new dot(200, 50);
+            var line1_end_dot = new dot(850, 50);
+            var line1 = new line(line1_Dots, canvas, line1_begin_dot, line1_end_dot, 3);
 
-        var car2 = new car(50, "206623", "YW25Z", canvas,line1,9);
-        car2.x_bot = 200;
-        car2.y_bot = 50;
-        car2.state="move";
-        car2.index=0;
-        console.log(car2.index);
-        function draw() {
-            window.requestAnimationFrame(draw, canvas);
-            if (car2.x_bot<car2.line.end_dot.x-car2.width-car2.width/3) {
-                car2.x_bot++;               
-            }else{
-                car2.x_bot=car2.line.begin_dot.x;
+            var car2 = new car(50, "206623", "YW25Z", canvas, line1, 9);
+            car2.x_bot = 200;
+            car2.y_bot = 50;
+            car2.state = "move";
+            car2.index = 0;
+            console.log(car2.index);
+        //一帧数据
+        function a_frame() {
+           
+            if (car2.x_bot < car2.line.end_dot.x - car2.width - car2.width / 3) {
+                car2.x_bot++;
+            } else {
+                car2.x_bot = car2.line.begin_dot.x;
             }
 
             car2.clear();
-                car2.load();
-                line1.load();
+            car2.load();
+            line1.load();
         }
+
+
+        //绘制界面
+        function draw() {
+            window.requestAnimationFrame(draw, canvas);
+            a_frame();
+        }
+
+
         /*
         *标识一个点
         */
@@ -71,10 +79,10 @@
         *canvas_elment：是画布对象
         *line_width:是线宽
         */
-        function line(Dots = {}, canvas_elment,begin_dot={},end_dot={}, line_width = 3) {
+        function line(Dots = {}, canvas_elment, begin_dot = {}, end_dot = {}, line_width = 3) {
             this.Dots = Dots;
-            this.begin_dot=begin_dot;//存车起始点
-            this.end_dot=end_dot;//存车结束点
+            this.begin_dot = begin_dot;//存车起始点
+            this.end_dot = end_dot;//存车结束点
             this.line_width = line_width;
             this.canvas = canvas_elment;
             this.ctx = canvas_elment.getContext("2d");
@@ -134,6 +142,68 @@
             };
         }
 
+function device(x,line,canvas_elment,size=10){
+    this.x=x;
+    this.line=line;
+    this.size=size;
+    this.canvas = canvas_elment;
+            this.ctx = canvas_elment.getContext("2d");
+            this.clear = function () {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); //清空所有的内容
+            };
+            var line = function (bx, by, ex, ey, ctx) {
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(ex, ey);       //设置末端状态               
+                ctx.closePath();
+                return ctx;
+            }
+            this.load = function () {
+                this.ctx.lineWidth = this.line_width;
+                // Math.sqrt(81);
+                //    console.log("dots_length:"+Dots.length);
+                if (Dots != null && Dots.length >= 2) {
+                    for (var i = 0; i < Dots.length; i++) {
+                        if (i <= Dots.length - 2) {
+                            var line_length = Math.sqrt(Math.pow(this.Dots[i + 1].x - this.Dots[i].x, 2) + Math.pow(this.Dots[i + 1].y - this.Dots[i].y, 2));
+                            //   console.log("line_length:" + line_length);
+                            if (line_length > this.line_width * 5) {
+                                var line_count = Math.ceil(line_length / (line_width * 5));
+                                //  console.log("line_count:"+line_count);
+                                for (var j = 0; j < line_count; j++) {
+                                    var begin_dot = new dot(0, 0);
+                                    var a_dotx_length = (this.Dots[i + 1].x - this.Dots[i].x) / line_count;
+                                    var a_doty_length = (this.Dots[i + 1].y - this.Dots[i].y) / line_count;
+                                    begin_dot.y = (a_doty_length * j) + this.Dots[i].y;
+                                    begin_dot.x = (a_dotx_length * j) + this.Dots[i].x;
+                                    var end_dot = new dot(0, 0);
+                                    if (j == (line_count - 1)) {
+                                        end_dot.y = this.Dots[i + 1].y;
+                                        end_dot.x = this.Dots[i + 1].x;
+                                    } else {
+                                        end_dot.y = (a_doty_length * (j + 1)) + this.Dots[i].y;
+                                        end_dot.x = (a_dotx_length * (j + 1)) + this.Dots[i].x;
+                                    }
+                                    if (j % 2 == 0)
+                                        this.ctx.strokeStyle = "black";
+                                    else
+                                        this.ctx.strokeStyle = "DarkGray";
+                                    //   console.log("bx:" + begin_dot.x + " by:" + begin_dot.y + " ex:" + end_dot.x + " ey:" + end_dot.y);
+                                    line(begin_dot.x, begin_dot.y, end_dot.x, end_dot.y, this.ctx).stroke();
+                                }
+                            } else {
+                                this.ctx.strokeStyle = "black";
+                                line(this.Dots[i].x, this.Dots[i].y, this.Dots[i + 1].x, this.Dots[i + 1].y, this.ctx).stroke();
+                            }
+
+                        }
+                    }
+
+                }
+
+            };
+
+}
         /*
         *
         *一个小车对象
@@ -142,18 +212,18 @@
         *loco_type:小车车型
         *canvas_elment:绘图对象
         */
-        function car(size, loco_id, loco_type, canvas_elment,line=null,index=0) {
+        function car(size, loco_id, loco_type, canvas_elment, line = null, index = 0) {
             this.width = size;
             this.height = size * 0.6;
             this.text = loco_id;
             this.type = loco_type;
             this.x_bot;
             this.y_bot;
-            this.state="normal";//状态为:normal/selected/move/update
+            this.state = "normal";//状态为:normal/selected/move/update
             this.x;
             this.y;
-            this.line=line;
-            this.index=index;
+            this.line = line;
+            this.index = index;
             this.canvas = canvas_elment;
             this.ctx = this.canvas.getContext("2d");
             this.clear = function () {
@@ -172,24 +242,24 @@
                 return ctx;
             }
             this.load = function () {
-                if(this.line!=null){
+                if (this.line != null) {
                     if (this.state != "move") {
                         this.x_bot = this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1);
                     }
-                    if(this.x_bot>(this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1))){
-                        this.x_bot=this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1);
+                    if (this.x_bot > (this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1))) {
+                        this.x_bot = this.line.end_dot.x - (this.width + this.width / 4) * (this.index + 1);
                     }
-                    if(this.x_bot<this.line.begin_dot.x){
-                        this.x_bot=this.line.begin_dot.x;
+                    if (this.x_bot < this.line.begin_dot.x) {
+                        this.x_bot = this.line.begin_dot.x;
                     }
-                    this.y_bot=this.line.end_dot.y;
-                }else {
-                    this.x_bot=0;
-                    this.y_bot=0;
+                    this.y_bot = this.line.end_dot.y;
+                } else {
+                    this.x_bot = 0;
+                    this.y_bot = 0;
                 }
                 this.x = this.x_bot;
                 this.y = this.y_bot - this.height - this.height / 3 - 3;
-                
+
                 if (this.x + this.width > this.canvas.width) {
                     this.x = this.canvas.width - this.width;
                 }
@@ -198,25 +268,25 @@
                 }
                 // 创建渐变
                 var grd = this.ctx.createRadialGradient(this.x + (this.width / 2), this.y + (this.height / 2), this.height / 3, this.x + (this.width / 2), this.y + (this.height / 2), this.width);
-                switch(this.state){
-                    case "normal":{
+                switch (this.state) {
+                    case "normal": {
                         grd.addColorStop(0, "DarkGray");
                         grd.addColorStop(1, "Azure");
-                    }break;
-                    case "selected":{
+                    } break;
+                    case "selected": {
                         grd.addColorStop(0, "red");
                         grd.addColorStop(1, "Azure");
-                    }break;
-                    case "move":{
+                    } break;
+                    case "move": {
                         grd.addColorStop(0, "aqua");
                         grd.addColorStop(1, "Azure");
-                    }break;
-                    case "update":{
+                    } break;
+                    case "update": {
                         grd.addColorStop(0, "red");
                         grd.addColorStop(1, "Azure");
-                    }break;
+                    } break;
                 }
-               
+
 
                 // 填充渐变
                 this.ctx.fillStyle = grd;
@@ -237,7 +307,7 @@
                 this.ctx.fillText(this.type, this.x + this.width / 2, this.y + this.height / 2.3);
             };
         };
- 
+
     </script>
 </body>
 
